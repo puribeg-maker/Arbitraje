@@ -2,9 +2,9 @@
 con tu nivel de cuenta real antes de confiar en el spread neto."""
 
 # Alerta si el spread neto supera este umbral (0.008 = 0,8%)
-UMBRAL_ALERTA = 0.008
+UMBRAL_ALERTA = -1                # 0.008
 # ...y se mantiene por esta cantidad de lecturas seguidas (filtra ruido)
-LECTURAS_CONSECUTIVAS = 2
+LECTURAS_CONSECUTIVAS = 1         # 2
 
 # Caso 1: USDT/CLP en Buda vs dólar de mercado
 USDT_CLP = {
