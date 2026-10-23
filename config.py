@@ -2,9 +2,9 @@
 con tu nivel de cuenta real antes de confiar en el spread neto."""
 
 # Alerta si el spread neto supera este umbral (0.008 = 0,8%)
-UMBRAL_ALERTA = -1 #0.008
+UMBRAL_ALERTA = 0.008
 # ...y se mantiene por esta cantidad de lecturas seguidas (filtra ruido)
-LECTURAS_CONSECUTIVAS = 1 #2
+LECTURAS_CONSECUTIVAS = 2
 # USDT/CLP: no alertar si el libro de Buda tiene menos de esto disponible
 # con un neto sobre el umbral (evita alertas por órdenes chicas)
 VOLUMEN_MINIMO_USDT = 200
