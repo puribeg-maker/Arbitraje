@@ -1,0 +1,9 @@
+timestamp,caso,detalle,precio,referencia,spread_bruto,spread_neto
+2026-10-23T20:15:07Z,USDT/CLP,vender USDT en Buda vs Yahoo CLP=X,993.06,994.76,-0.00171,-0.01571
+2026-10-23T20:15:07Z,USDT/CLP,comprar USDT en Buda vs Yahoo CLP=X,997.18,994.76,-0.00243,-0.01643
+2026-10-23T20:15:07Z,PAXG,premio kraken vs oro,4003.28,4011.5,-0.00205,-0.00605
+2026-10-23T20:15:07Z,PAXG,descuento kraken vs oro,4003.29,4011.5,0.00205,-0.00195
+2026-10-23T20:15:07Z,PAXG,premio coinbase vs oro,4003.15,4011.5,-0.00208,-0.00608
+2026-10-23T20:15:07Z,PAXG,descuento coinbase vs oro,4003.26,4011.5,0.00206,-0.00194
+2026-10-23T20:15:07Z,PAXG,comprar kraken -> vender coinbase,4003.15,4003.29,-3e-05,-0.00903
+2026-10-23T20:15:07Z,PAXG,comprar coinbase -> vender kraken,4003.28,4003.26,0.0,-0.009
