@@ -63,3 +63,14 @@ def descargar(desde, refrescar=False):
     print(f"Con historia válida: {close.shape[1]} | descartados: {len(descartados)}")
     close.to_csv(f_close); vol.to_csv(f_vol)
     return close, vol
+
+
+def limpiar(close, ret_max, ret_min):
+    """Elimina precios no positivos y saltos diarios imposibles (errores de Yahoo).
+    El precio del día anómalo se deja vacío, lo que corta ese retorno."""
+    close = close.where(close > 0)
+    ret = close.pct_change(fill_method=None)
+    malos = (ret > ret_max) | (ret < ret_min)
+    print(f"Limpieza: {int(malos.sum().sum())} precios anómalos eliminados "
+          f"en {int(malos.any().sum())} activos")
+    return close.mask(malos)
