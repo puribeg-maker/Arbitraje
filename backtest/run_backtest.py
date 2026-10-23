@@ -7,13 +7,14 @@ import pandas as pd
 import config_bt as C
 import reporte
 from backtest import equal_weight, metricas, simular
-from datos import descargar
+from datos import descargar, limpiar
 from walkforward import correr_grilla, walk_forward
 
 
 def main():
     close, vol = descargar(C.DESDE, refrescar="--refrescar" in sys.argv)
     close, vol = close.sort_index(), vol.reindex_like(close)
+    close = limpiar(close, C.RET_MAX_DIARIO, C.RET_MIN_DIARIO)
     if "BTC" not in close:
         sys.exit("Falta BTC en los datos; no se puede calcular el régimen.")
     print(f"Datos: {close.shape[1]} activos, {close.index[0].date()} a {close.index[-1].date()}")
@@ -23,13 +24,12 @@ def main():
 
     inicio = close.index[max(C.GRILLA["lookback"]) + C.BASE["salto"] + 60
                          + max(C.GRILLA["sma_regimen"])]
-    oos, elecciones = walk_forward(res, claves, C.WF_TRAIN, C.WF_TEST, inicio)
+    oos, rot_wf, elecciones = walk_forward(res, claves, C.WF_TRAIN, C.WF_TEST, inicio)
     rango = oos.index
 
     btc = close["BTC"].pct_change(fill_method=None).loc[rango].fillna(0)
     ew, ew_rot = equal_weight(close, vol, C.BASE["vol_min_usd"], C.BASE["rebalanceo"], C.COSTO_TOTAL)
     mejor_fija = max(res, key=lambda k: metricas(res[k][0].loc[rango]).get("Sharpe", -9))
-    rot_wf = pd.concat([res[k][1] for k in res], axis=1).mean(axis=1)  # aproximación
 
     series = {"Estrategia (walk-forward)": oos, "BTC (mantener)": btc,
               "Universo igual peso": ew.loc[rango]}
@@ -52,15 +52,18 @@ def main():
         f"Costos supuestos: {C.COMISION:.2%} comisión + {C.SLIPPAGE:.2%} slippage por lado.",
         "La fila 'Mejor combinación fija' elige los parámetros mirando todo el período: es optimista "
         "por construcción y sirve solo como techo. La cifra válida es la de walk-forward.",
-        "Rotación de la estrategia walk-forward: aproximada (promedio de la grilla).",
         "Entre rebalanceos se asumen pesos constantes (no se modela la deriva de precios), "
         "lo que subestima levemente los costos.",
     ]
+    anual = pd.DataFrame({k: (1 + v).groupby(v.index.year).prod() - 1
+                          for k, v in series.items()})
     os.makedirs("reporte", exist_ok=True)
-    reporte.generar("reporte/reporte.html", series, mets, elecciones, rob, notas)
+    reporte.generar("reporte/reporte.html", series, mets, elecciones, rob, notas, anual)
     oos.to_csv("reporte/retornos_oos.csv")
     print("\nResumen fuera de muestra:")
     print(pd.DataFrame(mets).T.round(3).to_string())
+    print("\nRetorno por año:")
+    print(anual.round(3).to_string())
     print("\nReporte: reporte/reporte.html")
 
 
