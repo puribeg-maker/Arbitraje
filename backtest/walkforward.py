@@ -22,14 +22,15 @@ def correr_grilla(close, vol_usd, base, grilla, costo):
 def walk_forward(res, claves, train, test, inicio):
     fechas = next(iter(res.values()))[0].index
     i = fechas.get_loc(inicio)
-    tramos, elecciones = [], []
+    tramos, rotaciones, elecciones = [], [], []
     while i + train < len(fechas):
         tr = fechas[i:i + train]
         te = fechas[i + train:i + train + test]
         mejor = max(res, key=lambda k: metricas(res[k][0].loc[tr]).get("Sharpe", -9))
         tramos.append(res[mejor][0].loc[te])
+        rotaciones.append(res[mejor][1].loc[te])
         elecciones.append({"desde": te[0].date(), "hasta": te[-1].date(),
                            **dict(zip(claves, mejor)),
                            "Sharpe train": metricas(res[mejor][0].loc[tr]).get("Sharpe")})
         i += test
-    return pd.concat(tramos), pd.DataFrame(elecciones)
+    return pd.concat(tramos), pd.concat(rotaciones), pd.DataFrame(elecciones)
