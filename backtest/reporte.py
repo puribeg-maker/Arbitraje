@@ -27,7 +27,7 @@ def _tabla_metricas(m):
     return out.to_html(classes="t", border=0)
 
 
-def generar(ruta, series, metricas_, elecciones, robustez, notas):
+def generar(ruta, series, metricas_, elecciones, robustez, notas, anual):
     fig, ax = plt.subplots(2, 1, figsize=(10, 7), sharex=True,
                            gridspec_kw={"height_ratios": [2, 1]})
     for nombre, r in series.items():
@@ -39,15 +39,17 @@ def generar(ruta, series, metricas_, elecciones, robustez, notas):
     for a in ax: a.grid(alpha=.3)
 
     html = f"""<!doctype html><html><head><meta charset="utf-8">
-<title>Backtest momentum cripto</title>
+<title>Backtest momentum cripto v2</title>
 <style>body{{font-family:system-ui,sans-serif;max-width:1000px;margin:24px auto;padding:0 16px;color:#222}}
 .t{{border-collapse:collapse;font-size:14px;margin:8px 0 20px}}
 .t td,.t th{{padding:5px 10px;border-bottom:1px solid #ddd;text-align:right}}
 .t th:first-child,.t td:first-child{{text-align:left}} .nota{{background:#fff6e0;padding:10px 14px;border-radius:6px}}
 img{{max-width:100%}}</style></head><body>
-<h1>Backtest: momentum relativo + filtro de régimen</h1>
+<h1>Backtest v2: momentum vs BTC + régimen con banda + buffer</h1>
 <h2>Resultados fuera de muestra</h2>{_tabla_metricas(metricas_)}
 {_img(fig)}
+<h2>Retorno por año</h2>
+{anual.to_html(classes="t", border=0, float_format=lambda v: f"{v:.1%}")}
 <h2>Parámetros elegidos en cada ventana</h2>
 <p>Si cambian mucho de una ventana a otra, la estrategia no es estable.</p>
 {elecciones.to_html(classes="t", border=0, index=False, float_format=lambda v: f"{v:.2f}")}
