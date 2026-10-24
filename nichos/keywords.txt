@@ -1,0 +1,23 @@
+# Palabras semilla (una por línea, en inglés: el comprador de Etsy es mayoritariamente de EE.UU.)
+# El bot además descubre palabras nuevas a partir de los tags de los productos que aparecen.
+
+# --- Productos digitales ---
+2027 calendar printable
+digital planner
+budget planner
+habit tracker printable
+meal planner printable
+wedding planner printable
+goodnotes planner
+family calendar printable
+teacher planner
+small business planner
+
+# --- Stickers / Life (salud mental) ---
+mental health sticker
+anxiety sticker
+self care sticker
+therapy sticker
+positive affirmation sticker
+mental health hoodie
+be kind to your mind sweatshirt
