@@ -22,8 +22,25 @@ CAMPOS = ["fecha", "keyword", "origen", "competencia", "fav_dia", "visitas_dia",
 
 # ---------- API ----------
 def _headers(con_secreto=True):
-    k, s = os.environ["ETSY_KEYSTRING"], os.getenv("ETSY_SHARED_SECRET", "")
+    k = os.environ["ETSY_KEYSTRING"].strip()
+    s = os.getenv("ETSY_SHARED_SECRET", "").strip()
     return {"x-api-key": f"{k}:{s}" if con_secreto and s else k}
+
+
+def diagnostico():
+    """Verifica la key antes de buscar, sin imprimir secretos."""
+    k, sec = os.getenv("ETSY_KEYSTRING", ""), os.getenv("ETSY_SHARED_SECRET", "")
+    print(f"[diag] ETSY_KEYSTRING: {len(k)} caracteres | ETSY_SHARED_SECRET: {len(sec)} caracteres")
+    if k != k.strip() or sec != sec.strip():
+        print("[diag] Ojo: algún secret tiene espacios o saltos de línea al inicio o al final.")
+    url = "https://openapi.etsy.com/v3/application/openapi-ping"
+    for con_secreto in (True, False):
+        r = requests.get(url, headers=_headers(con_secreto), timeout=30)
+        formato = "keystring:secret" if con_secreto else "solo keystring"
+        print(f"[diag] ping ({formato}): {r.status_code} {r.text[:200]}")
+        if r.ok:
+            return con_secreto
+    raise SystemExit("La API de Etsy rechazó la key en ambos formatos (ver [diag] arriba).")
 
 
 def buscar(keyword):
@@ -34,7 +51,8 @@ def buscar(keyword):
     if r.status_code == 429:
         time.sleep(5)
         r = requests.get(API, headers=_headers(), params=params, timeout=30)
-    r.raise_for_status()
+    if not r.ok:
+        raise RuntimeError(f"{r.status_code} {r.text[:200]}")
     time.sleep(0.25)           # bajo el límite de Etsy
     return r.json()
 
@@ -147,6 +165,7 @@ def main():
     ahora = datetime.now(timezone.utc)
     historial = leer_historial()
     semillas = leer_semillas()
+    diagnostico()
     filas, respuestas = [], []
 
     for kw in semillas:
