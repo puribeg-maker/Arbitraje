@@ -1,0 +1,38 @@
+name: Nichos Etsy
+
+on:
+  schedule:
+    - cron: "0 12 * * 1"     # lunes 12:00 UTC (≈ 9:00 en Chile)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  nichos:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: nichos
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Analizar nichos
+        run: python nichos.py
+        env:
+          ETSY_KEYSTRING: ${{ secrets.ETSY_KEYSTRING }}
+          ETSY_SHARED_SECRET: ${{ secrets.ETSY_SHARED_SECRET }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+      - name: Guardar historial
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase
+          git add data/nichos.csv
+          git diff --cached --quiet || git commit -m "Nichos $(date -u +%F)"
+          git push
