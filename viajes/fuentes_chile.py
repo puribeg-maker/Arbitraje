@@ -60,8 +60,20 @@ def cryptomkt():
 
 
 # ---------- Orionx (GraphQL) ----------
+ORIONX_URLS = ["https://api2.orionx.com/graphql", "https://api.orionx.com/graphql"]
+
+
 def orionx():
-    url = "https://api.orionx.com/graphql"
+    url = None
+    for u in ORIONX_URLS:                 # el endpoint ha cambiado en el tiempo
+        try:
+            requests.post(u, json={"query": "{ __typename }"}, timeout=T)
+            url = u
+            break
+        except requests.exceptions.ConnectionError:
+            continue
+    if url is None:
+        raise RuntimeError("ningún endpoint de Orionx responde (DNS/conexión)")
 
     def q(query):
         r = requests.post(url, json={"query": query}, timeout=T)

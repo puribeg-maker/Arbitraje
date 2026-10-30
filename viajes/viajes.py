@@ -115,31 +115,79 @@ def escanear_chile(libros, retiros, ahora):
 
 
 # ---------- Extranjero: monedas de bajo volumen ----------
+def red_comun(info_redes, a, b, base):
+    """Devuelve (fee_retiro_en_moneda, nota) o (None, motivo_descartar)."""
+    ra, rb = info_redes.get(a), info_redes.get(b)
+    if ra is None or rb is None:
+        return 0.0, "estado de redes desconocido"
+    ca, cb = ra.get(base), rb.get(base)
+    if not ca or not cb:
+        return None, "moneda sin datos de red"
+    if not ca["retiro"]:
+        return None, f"retiros cerrados en {a}"
+    if not cb["deposito"]:
+        return None, f"depósitos cerrados en {b}"
+    if "*" in ca["retiro"] or "*" in cb["deposito"]:
+        comunes = set(ca["retiro"])
+    else:
+        comunes = set(ca["retiro"]) & cb["deposito"]
+    if not comunes:
+        return None, "sin red común (posible token distinto con el mismo ticker)"
+    fees = [ca["retiro"][n] for n in comunes if ca["retiro"].get(n) is not None]
+    return (min(fees) if fees else 0.0), ("" if fees else "fee de retiro desconocido")
+
+
+def ciclo_usd(asks_a, bids_b, monto, fee_ret):
+    qty = comprar(asks_a, monto)
+    if qty is None:
+        return None
+    qty = qty * (1 - C.COMISION_EXT) - fee_ret
+    usd = vender(bids_b, qty) if qty > 0 else None
+    return None if usd is None else usd * (1 - C.COMISION_EXT) / monto - 1
+
+
 def escanear_extranjero(datos, ahora):
-    filas = []
+    # 1) Candidatos por top de libro
+    cand = []
     for simbolo, por_ex in datos.items():
-        if len(por_ex) < 2:
+        if len(por_ex) < 2 or min(v["vol"] for v in por_ex.values()) > C.VOL_MAX_USD:
             continue
-        vols = [v["vol"] for v in por_ex.values()]
-        if min(vols) > C.VOL_MAX_USD:
-            continue                               # no es de bajo volumen en ningún lado
         validos = {e: v for e, v in por_ex.items() if v["vol"] >= C.VOL_MIN_USD}
-        if len(validos) < 2:
+        for a, b in itertools.permutations(validos, 2):
+            bruto = validos[b]["bid"] / validos[a]["ask"] - 1
+            if 2 * C.COMISION_EXT < bruto <= 1.0:
+                cand.append((bruto, simbolo, a, b, validos))
+    cand.sort(reverse=True)
+
+    # 2) Estado de redes de los exchanges involucrados
+    involucrados = sorted({c[2] for c in cand} | {c[3] for c in cand})
+    info_redes, est_redes = fuentes_extranjero.redes(involucrados)
+    print("Redes:", est_redes)
+
+    # 3) Filtro de redes y profundidad sobre los mejores candidatos
+    filas, revisados = [], 0
+    for bruto, simbolo, a, b, validos in cand:
+        if revisados >= C.TOP_PROFUNDIDAD:
+            break
+        base = simbolo.split("/")[0]
+        fee_ret, nota = red_comun(info_redes, a, b, base)
+        if fee_ret is None:
             continue
-        a = min(validos, key=lambda e: validos[e]["ask"])
-        b = max(validos, key=lambda e: validos[e]["bid"])
-        if a == b:
+        revisados += 1
+        try:
+            _, asks_a = fuentes_extranjero.libro(a, simbolo)
+            bids_b, _ = fuentes_extranjero.libro(b, simbolo)
+        except Exception as e:
             continue
-        bruto = validos[b]["bid"] / validos[a]["ask"] - 1
-        if bruto > 1.0 or bruto <= 0:              # >100% suele ser otro token con el mismo ticker
-            continue
-        neto = bruto - 2 * C.COMISION_EXT
+        neto = ciclo_usd(asks_a, bids_b, C.MONTO_USD, fee_ret)
+        if neto is None:
+            continue                                   # sin profundidad para el monto
         filas.append({"timestamp": ahora, "tipo": "extranjero", "moneda": simbolo,
                       "ruta": f"{a}->{b}", "neto": round(neto, 5), "bruto": round(bruto, 5),
                       "ganancia_clp": "", "precio_compra": validos[a]["ask"],
                       "precio_venta": validos[b]["bid"],
                       "volumen_usd": round(min(validos[a]["vol"], validos[b]["vol"])),
-                      "nota": "sin costo de retiro ni profundidad; verificar depósitos/retiros"})
+                      "nota": nota})
     return filas
 
 
@@ -199,7 +247,8 @@ def texto_alerta(f, n):
     return (f"• {f['moneda']}: comprar en {a} a {f['precio_compra']} → vender en {b} a "
             f"{f['precio_venta']}. Neto aprox. {float(f['neto']):.2%} | volumen 24h "
             f"del lado más chico: US${miles(float(f['volumen_usd']))}. Spread visto: {dur}.\n"
-            f"  Ojo: {f['nota']}")
+            f"  Neto calculado con US${C.MONTO_USD}, comisiones, retiro por la red común y profundidad."
+            + (f"\n  Ojo: {f['nota']}" if f["nota"] else ""))
 
 
 def enviar_mail(asunto, texto):
@@ -245,6 +294,8 @@ def main():
             continue
         if f["tipo"] == "chile" and "deshabilitados" in f["nota"]:
             continue
+        if f["tipo"] == "extranjero" and "desconocido" in f["nota"]:
+            continue                                   # sin redes confirmadas no se alerta
         n = lecturas_seguidas(historial, f)
         if n >= C.LECTURAS_MIN:
             alertas.append((f, n))

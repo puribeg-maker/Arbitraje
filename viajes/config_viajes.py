@@ -39,4 +39,6 @@ QUOTES_EXT = ["USDT", "USD"]
 VOL_MIN_USD = 5_000            # bajo esto, no hay con quién transar
 VOL_MAX_USD = 2_000_000        # "bajo volumen": al menos un lado bajo este umbral
 COMISION_EXT = 0.002           # taker típico — VERIFICAR
-UMBRAL_NETO_EXT = 0.03         # más alto: no incluye costo de retiro (desconocido) ni profundidad
+UMBRAL_NETO_EXT = 0.02         # neto con comisiones, retiro y profundidad para MONTO_USD
+MONTO_USD = 300                # monto por viaje en el extranjero
+TOP_PROFUNDIDAD = 25           # candidatos a los que se les revisa el libro completo
