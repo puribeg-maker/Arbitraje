@@ -146,7 +146,7 @@ def ciclo_usd(asks_a, bids_b, monto, fee_ret):
     return None if usd is None else usd * (1 - C.COMISION_EXT) / monto - 1
 
 
-def escanear_extranjero(datos, ahora):
+def escanear_extranjero(datos, info_redes, ahora):
     # 1) Candidatos por top de libro
     cand = []
     for simbolo, por_ex in datos.items():
@@ -158,11 +158,6 @@ def escanear_extranjero(datos, ahora):
             if 2 * C.COMISION_EXT < bruto <= 1.0:
                 cand.append((bruto, simbolo, a, b, validos))
     cand.sort(reverse=True)
-
-    # 2) Estado de redes de los exchanges involucrados
-    involucrados = sorted({c[2] for c in cand} | {c[3] for c in cand})
-    info_redes, est_redes = fuentes_extranjero.redes(involucrados)
-    print("Redes:", est_redes)
 
     # 3) Filtro de redes y profundidad sobre los mejores candidatos
     filas, revisados = [], 0
@@ -191,6 +186,126 @@ def escanear_extranjero(datos, ahora):
     return filas
 
 
+# ---------- Buda <-> extranjero (dos traslados, todo con precios ejecutables) ----------
+def redes_moneda(info_redes, ex, mon, preferida=None):
+    """(fee_retiro, deposito_ok, retiro_ok, nota). None en flags = desconocido."""
+    r = info_redes.get(ex)
+    if r is None:
+        return None, None, None, f"redes de {ex} no públicas"
+    c = r.get(mon)
+    if not c:
+        return None, None, None, f"{mon} sin datos de red en {ex}"
+    ret = c["retiro"]
+    fee = None
+    if preferida and preferida in ret and ret[preferida] is not None:
+        fee = ret[preferida]
+    elif ret:
+        fees = [v for v in ret.values() if v is not None]
+        fee = min(fees) if fees else None
+    return fee, bool(c["deposito"]), bool(ret), ""
+
+
+def escanear_buda_ext(libros, retiros, datos, info_redes, ahora):
+    buda = libros.get("buda", {})
+    usdt = buda.get("USDT")
+    if not usdt or not usdt["bids"] or not usdt["asks"]:
+        return []
+    fee_b = C.COMISION_TAKER["buda"]
+    ret_b_usdt, _ = fee_retiro(retiros, "buda", "USDT")
+    filas = []
+    for mon, lb in buda.items():
+        if mon in ("USDT", "CLP") or not lb["bids"] or not lb["asks"]:
+            continue
+        simbolo = f"{mon}/USDT"
+        for ex, tk in datos.get(simbolo, {}).items():
+            # Prefiltro barato con tops de libro
+            ida = tk["bid"] * usdt["bids"][0][0] / lb["asks"][0][0] - 1
+            vuelta = lb["bids"][0][0] / (tk["ask"] * usdt["asks"][0][0]) - 1
+            if max(ida, vuelta) < 0.01:
+                continue
+            try:
+                bids_x, asks_x = fuentes_extranjero.libro(ex, simbolo)
+            except Exception:
+                continue
+            ret_b_mon, _ = fee_retiro(retiros, "buda", mon)
+            t = C.TIEMPO_TRASLADO_MIN.get(mon, 30) + C.TIEMPO_TRASLADO_MIN["USDT"]
+
+            # IDA: CLP -> mon (Buda) -> vender en ex por USDT -> USDT a Buda -> CLP
+            fee_x_usdt, _, ret_ok_usdt, n1 = redes_moneda(info_redes, ex, "USDT", C.RED_USDT_PREFERIDA)
+            _, dep_ok_mon, _, n2 = redes_moneda(info_redes, ex, mon)
+            notas = [n for n in (n1, n2) if n]
+            if dep_ok_mon is False:
+                notas.append(f"depósitos de {mon} cerrados en {ex}")
+            if ret_ok_usdt is False:
+                notas.append(f"retiros de USDT cerrados en {ex}")
+            fx = fee_x_usdt if fee_x_usdt is not None else C.RETIRO_CRIPTO_DEFAULT["USDT"]
+            q = comprar(lb["asks"], C.MONTO_CLP)
+            neto = None
+            if q is not None and ret_b_mon is not None:
+                q = q * (1 - fee_b) - ret_b_mon
+                u = vender(bids_x, q) if q > 0 else None
+                if u is not None:
+                    u = u * (1 - C.COMISION_EXT) - fx
+                    clp = vender(usdt["bids"], u) if u > 0 else None
+                    if clp is not None:
+                        neto = (clp * (1 - fee_b) - C.RETIRO_CLP["buda"]) / C.MONTO_CLP - 1
+            if neto is not None:
+                filas.append({"timestamp": ahora, "tipo": "buda-ext", "moneda": mon,
+                              "ruta": f"buda->{ex}->buda (ida)", "neto": round(neto, 5),
+                              "bruto": round(ida, 5), "ganancia_clp": round(neto * C.MONTO_CLP),
+                              "precio_compra": lb["asks"][0][0], "precio_venta": tk["bid"],
+                              "volumen_usd": round(tk["vol"]),
+                              "nota": "; ".join(notas + [f"2 traslados (~{t} min)"])})
+
+            # VUELTA: CLP -> USDT (Buda) -> comprar mon en ex -> mon a Buda -> CLP
+            fee_x_mon, _, ret_ok_mon, n3 = redes_moneda(info_redes, ex, mon)
+            _, dep_ok_usdt, _, n4 = redes_moneda(info_redes, ex, "USDT")
+            notas = [n for n in (n3, n4) if n]
+            if dep_ok_usdt is False:
+                notas.append(f"depósitos de USDT cerrados en {ex}")
+            if ret_ok_mon is False:
+                notas.append(f"retiros de {mon} cerrados en {ex}")
+            fm = fee_x_mon if fee_x_mon is not None else C.RETIRO_CRIPTO_DEFAULT.get(mon)
+            u = comprar(usdt["asks"], C.MONTO_CLP)
+            neto = None
+            if u is not None and ret_b_usdt is not None and fm is not None:
+                u = u * (1 - fee_b) - ret_b_usdt
+                q = comprar(asks_x, u) if u > 0 else None
+                if q is not None:
+                    q = q * (1 - C.COMISION_EXT) - fm
+                    clp = vender(lb["bids"], q) if q > 0 else None
+                    if clp is not None:
+                        neto = (clp * (1 - fee_b) - C.RETIRO_CLP["buda"]) / C.MONTO_CLP - 1
+            if neto is not None:
+                filas.append({"timestamp": ahora, "tipo": "buda-ext", "moneda": mon,
+                              "ruta": f"buda->{ex}->buda (vuelta)", "neto": round(neto, 5),
+                              "bruto": round(vuelta, 5), "ganancia_clp": round(neto * C.MONTO_CLP),
+                              "precio_compra": tk["ask"], "precio_venta": lb["bids"][0][0],
+                              "volumen_usd": round(tk["vol"]),
+                              "nota": "; ".join(notas + [f"2 traslados (~{t} min)"])})
+    return filas
+
+
+# ---------- CryptoMKT: solo referencia (revisar a mano) ----------
+def escanear_ref(libros, refs, ahora):
+    buda = libros.get("buda", {})
+    filas = []
+    for mon, ref in refs.items():
+        lb = buda.get(mon)
+        if not lb or not lb["bids"] or not lb["asks"]:
+            continue
+        caro = ref / lb["asks"][0][0] - 1           # CryptoMKT sobre Buda: comprar en Buda
+        barato = lb["bids"][0][0] / ref - 1         # CryptoMKT bajo Buda: comprar en CryptoMKT
+        for dif, ruta, pc, pv in ((caro, "buda->cryptomkt", lb["asks"][0][0], ref),
+                                  (barato, "cryptomkt->buda", ref, lb["bids"][0][0])):
+            if dif > 0:
+                filas.append({"timestamp": ahora, "tipo": "referencia", "moneda": mon, "ruta": ruta,
+                              "neto": round(dif, 5), "bruto": round(dif, 5), "ganancia_clp": "",
+                              "precio_compra": pc, "precio_venta": pv, "volumen_usd": "",
+                              "nota": "precio de referencia CryptoMKT, sin costos: revisar a mano"})
+    return filas
+
+
 # ---------- Historial, persistencia y alertas ----------
 def leer_historial(max_filas=20_000):
     """Solo las últimas filas: basta para medir persistencia."""
@@ -211,7 +326,8 @@ def guardar(filas):
 
 
 def umbral(f):
-    return C.UMBRAL_NETO_CL if f["tipo"] == "chile" else C.UMBRAL_NETO_EXT
+    return {"chile": C.UMBRAL_NETO_CL, "buda-ext": C.UMBRAL_NETO_CL,
+            "referencia": C.UMBRAL_REF_CRYPTOMKT}.get(f["tipo"], C.UMBRAL_NETO_EXT)
 
 
 def sobre_umbral(f):
@@ -234,8 +350,27 @@ def lecturas_seguidas(historial, f):
 
 
 def texto_alerta(f, n):
-    a, b = f["ruta"].split("->")
     dur = f"{n} lecturas seguidas (~{(n - 1) * 15} min)" if n > 1 else "primera lectura"
+    if f["tipo"] == "buda-ext":
+        ex = f["ruta"].split("->")[1]
+        if "(ida)" in f["ruta"]:
+            pasos = (f"comprar {f['moneda']} en Buda (${miles(f['precio_compra'])}) → enviarlo a {ex} → "
+                     f"venderlo por USDT ({f['precio_venta']}) → enviar USDT a Buda por "
+                     f"{C.RED_USDT_PREFERIDA} → vender USDT por pesos")
+        else:
+            pasos = (f"comprar USDT en Buda → enviarlos a {ex} por {C.RED_USDT_PREFERIDA} → comprar "
+                     f"{f['moneda']} ({f['precio_compra']} USDT) → enviarlo a Buda → venderlo "
+                     f"(${miles(f['precio_venta'])})")
+        return (f"• {f['moneda']} vía {ex}: {pasos}\n"
+                f"  Con ${miles(C.MONTO_CLP)}: neto {float(f['neto']):.2%} "
+                f"(≈ ${miles(float(f['ganancia_clp']))}). Spread visto: {dur}.\n  Ojo: {f['nota']}")
+    if f["tipo"] == "referencia":
+        a, b = f["ruta"].split("->")
+        return (f"• {f['moneda']}: diferencia de {float(f['neto']):.1%} entre Buda y el precio de "
+                f"referencia de CryptoMKT (comprar en {a}, vender en {b}). Spread visto: {dur}.\n"
+                f"  No es precio ejecutable ni incluye costos: revisa en la app de CryptoMKT el "
+                f"precio real de compra/venta antes de mover nada.")
+    a, b = f["ruta"].split("->")
     if f["tipo"] == "chile":
         t = C.TIEMPO_TRASLADO_MIN.get(f["moneda"])
         traslado = f"~{t} min" if t else "desconocido"
@@ -283,9 +418,15 @@ def main():
     ahora = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     historial = leer_historial()
 
-    libros, retiros, est_cl = fuentes_chile.todas()
+    libros, retiros, est_cl, refs = fuentes_chile.todas()
     datos_ext, est_ext = fuentes_extranjero.tickers(C.EXCHANGES_EXT, C.QUOTES_EXT)
-    filas = escanear_chile(libros, retiros, ahora) + escanear_extranjero(datos_ext, ahora)
+    operativos = [e for e, v in est_ext.items() if v.startswith("OK") and "(0 pares)" not in v]
+    info_redes, est_redes = fuentes_extranjero.redes(operativos)
+    print("Redes:", est_redes)
+    filas = (escanear_chile(libros, retiros, ahora)
+             + escanear_buda_ext(libros, retiros, datos_ext, info_redes, ahora)
+             + escanear_ref(libros, refs, ahora)
+             + escanear_extranjero(datos_ext, info_redes, ahora))
     resumen({**est_cl, **est_ext}, filas)
 
     alertas = []
@@ -294,13 +435,16 @@ def main():
             continue
         if f["tipo"] == "chile" and "deshabilitados" in f["nota"]:
             continue
+        if f["tipo"] == "buda-ext" and "cerrados" in f["nota"]:
+            continue
         if f["tipo"] == "extranjero" and "desconocido" in f["nota"]:
             continue                                   # sin redes confirmadas no se alerta
         n = lecturas_seguidas(historial, f)
         if n >= C.LECTURAS_MIN:
             alertas.append((f, n))
     if alertas:
-        alertas.sort(key=lambda x: (x[0]["tipo"] != "chile", -float(x[0]["neto"])))
+        orden = {"chile": 0, "buda-ext": 1, "referencia": 2, "extranjero": 3}
+        alertas.sort(key=lambda x: (orden.get(x[0]["tipo"], 9), -float(x[0]["neto"])))
         cuerpo = "\n\n".join(texto_alerta(f, n) for f, n in alertas)
         cuerpo += ("\n\nAntes de operar: confirma en ambas plataformas que la red de retiro y la de "
                    "depósito coincidan, que no haya retiros suspendidos y que el precio siga ahí.")
@@ -309,8 +453,8 @@ def main():
 
     # Para no inflar el CSV: todas las rutas chilenas con bruto > 0, y en el extranjero solo
     # las que superan la mitad del umbral. Una fila "lectura" marca cada corrida.
-    guardar_filas = [f for f in filas if f["tipo"] == "chile"
-                     or float(f["neto"]) >= C.UMBRAL_NETO_EXT / 2]
+    guardar_filas = [f for f in filas if f["tipo"] in ("chile", "referencia")
+                     or (f["neto"] != "" and float(f["neto"]) >= umbral(f) / 2)]
     guardar_filas.append({k: "" for k in CAMPOS} | {"timestamp": ahora, "tipo": "lectura"})
     guardar(guardar_filas)
 
