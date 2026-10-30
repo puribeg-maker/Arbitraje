@@ -9,13 +9,15 @@ LECTURAS_MIN = 2               # el spread debe existir en ≥ N lecturas seguid
 COMISION_TAKER = {             # VERIFICAR en tu tramo
     "buda": 0.008,
     "cryptomkt": 0.008,        # hay referencias de hasta 1,5% en algunas operaciones
-    "orionx": 0.008,
 }
 RETIRO_CLP = {                 # costo de sacar los pesos al banco — VERIFICAR
     "buda": 2_900,
     "cryptomkt": 3_000,
-    "orionx": 3_000,
 }
+# CryptoMKT entrega solo un precio de referencia: se avisa para revisar a mano
+UMBRAL_REF_CRYPTOMKT = 0.03    # diferencia mínima vs el libro de Buda para avisar
+# Red preferida para traer USDT de vuelta a Buda — VERIFICAR que Buda la acepte
+RED_USDT_PREFERIDA = "TRC20"
 # Costo de retiro de cripto (en unidades de la moneda) cuando la API no lo entrega.
 # Supuestos conservadores — VERIFICAR la red más barata disponible en cada plataforma.
 RETIRO_CRIPTO_DEFAULT = {
