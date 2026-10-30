@@ -52,3 +52,4 @@ timestamp,tipo,moneda,ruta,neto,bruto,ganancia_clp,precio_compra,precio_venta,vo
 2026-10-30T02:13:30Z,extranjero,XVG/USDT,mexc->htx,0.09929,0.10329,,0.002188,0.002414,9207,sin costo de retiro ni profundidad; verificar depósitos/retiros
 2026-10-30T02:13:30Z,extranjero,TORN/USDT,htx->mexc,0.11052,0.11452,,5.9667,6.65,58026,sin costo de retiro ni profundidad; verificar depósitos/retiros
 2026-10-30T02:13:30Z,lectura,,,,,,,,,
+2026-10-30T02:27:20Z,lectura,,,,,,,,,
