@@ -1,18 +1,20 @@
-"""Libros de órdenes CLP de Buda, CryptoMKT y Orionx.
-Cada fuente devuelve {MONEDA: {"bids": [(p, q)...], "asks": [(p, q)...]}} y
-{MONEDA: info_retiro}. Si una fuente falla, se registra y se sigue con las demás."""
+"""Fuentes chilenas.
+- Buda: libro de órdenes CLP (precios ejecutables) y costos de retiro.
+- CryptoMKT: solo precio de referencia de su página pública (NO es un precio ejecutable;
+  sirve para avisar que vale la pena revisar a mano).
+- Orionx: eliminada (anunció cierre definitivo de operaciones en 2026)."""
 import time
 
 import requests
 
 T = 20
+UA = {"User-Agent": "Mozilla/5.0 (escaner-viajes)"}
 
 
 def _lv(niveles):
     return [(float(p), float(q)) for p, q in niveles if float(q) > 0]
 
 
-# ---------- Buda ----------
 def buda():
     base = "https://www.buda.com/api/v2"
     mercados = requests.get(f"{base}/markets", timeout=T).json()["markets"]
@@ -32,80 +34,45 @@ def buda():
     return libros, retiros
 
 
-# ---------- CryptoMKT ----------
-def cryptomkt():
-    base = "https://api.exchange.cryptomkt.com/api/3/public"
-    simbolos = requests.get(f"{base}/symbol", timeout=T).json()
-    clp = {s: v["base_currency"] for s, v in simbolos.items()
-           if v.get("quote_currency") == "CLP" and v.get("type", "spot") == "spot"}
-    libros = {}
-    if clp:
-        obs = requests.get(f"{base}/orderbook", params={"symbols": ",".join(clp), "depth": 50},
-                           timeout=T).json()
-        for s, ob in obs.items():
-            libros[clp[s]] = {"bids": sorted(_lv(ob.get("bid", [])), reverse=True),
-                              "asks": sorted(_lv(ob.get("ask", [])))}
-    retiros = {}
-    try:
-        cur = requests.get(f"{base}/currency", timeout=T).json()
-        for mon, c in cur.items():
-            redes = [n for n in c.get("networks", []) if n.get("payout_enabled")]
-            fees = [float(n["payout_fee"]) for n in redes if n.get("payout_fee") not in (None, "")]
-            retiros[mon] = {"fee": min(fees) if fees else None,
-                            "habilitado": bool(c.get("payout_enabled")),
-                            "deposito": bool(c.get("payin_enabled"))}
-    except Exception as e:
-        print(f"[aviso] cryptomkt currency: {e}")
-    return libros, retiros
+def _codigo(item):
+    for k in ("symbol", "currency", "code", "base", "asset", "ticker", "name"):
+        v = item.get(k)
+        if isinstance(v, str) and 2 <= len(v) <= 10:
+            return v.upper()
+        if isinstance(v, dict):
+            for kk in ("symbol", "code"):
+                if isinstance(v.get(kk), str):
+                    return v[kk].upper()
+    return None
 
 
-# ---------- Orionx (GraphQL) ----------
-ORIONX_URLS = ["https://api2.orionx.com/graphql", "https://api.orionx.com/graphql"]
-
-
-def orionx():
-    url = None
-    for u in ORIONX_URLS:                 # el endpoint ha cambiado en el tiempo
-        try:
-            requests.post(u, json={"query": "{ __typename }"}, timeout=T)
-            url = u
-            break
-        except requests.exceptions.ConnectionError:
-            continue
-    if url is None:
-        raise RuntimeError("ningún endpoint de Orionx responde (DNS/conexión)")
-
-    def q(query):
-        r = requests.post(url, json={"query": query}, timeout=T)
-        r.raise_for_status()
-        j = r.json()
-        if j.get("errors"):
-            raise RuntimeError(j["errors"][0].get("message"))
-        return j["data"]
-
-    mercados = q("{ markets { code mainCurrency { code units } secondaryCurrency { code units } } }")["markets"]
-    libros = {}
-    for m in mercados:
-        if m["secondaryCurrency"]["code"] != "CLP":
-            continue
-        mon, u = m["mainCurrency"]["code"], 10 ** (m["mainCurrency"].get("units") or 0)
-        ob = q(f'{{ marketOrderBook(marketCode: "{m["code"]}", limit: 50) '
-               f'{{ buy {{ limitPrice amount }} sell {{ limitPrice amount }} }} }}')["marketOrderBook"]
-        conv = lambda lado: [(float(o["limitPrice"]), float(o["amount"]) / u) for o in lado if o["amount"]]
-        libros[mon] = {"bids": sorted(conv(ob["buy"]), reverse=True), "asks": sorted(conv(ob["sell"]))}
-        time.sleep(0.2)
-    return libros, {}
-
-
-FUENTES = {"buda": buda, "cryptomkt": cryptomkt, "orionx": orionx}
+def cryptomkt_ref():
+    """{MONEDA: precio_referencia_CLP} desde el endpoint de la página pública."""
+    url = "https://www.cryptomkt.com/api/v1/landing/market_data/CLP"
+    j = requests.get(url, params={"page": 1, "page_size": 100}, headers=UA, timeout=T).json()
+    datos = j.get("data", [])
+    if datos:
+        print(f"[diag] cryptomkt: {len(datos)} activos; claves del primero: {list(datos[0].keys())}")
+    refs = {}
+    for it in datos:
+        cod = _codigo(it)
+        precio = (it.get("D1") or {}).get("new_price") or it.get("price")
+        if cod and precio:
+            refs[cod] = float(precio)
+    return refs
 
 
 def todas():
-    libros, retiros, estado = {}, {}, {}
-    for nombre, f in FUENTES.items():
-        try:
-            libros[nombre], retiros[nombre] = f()
-            estado[nombre] = f"OK ({len(libros[nombre])} mercados CLP)"
-        except Exception as e:
-            estado[nombre] = f"ERROR: {str(e)[:150]}"
-    return libros, retiros, estado
+    libros, retiros, estado, refs = {}, {}, {}, {}
+    try:
+        libros["buda"], retiros["buda"] = buda()
+        estado["buda"] = f"OK ({len(libros['buda'])} mercados CLP)"
+    except Exception as e:
+        estado["buda"] = f"ERROR: {str(e)[:150]}"
+    try:
+        refs = cryptomkt_ref()
+        estado["cryptomkt (referencia)"] = f"OK ({len(refs)} precios)" if refs else \
+            "OK pero sin códigos reconocibles (ver [diag] en el log)"
+    except Exception as e:
+        estado["cryptomkt (referencia)"] = f"ERROR: {str(e)[:150]}"
+    return libros, retiros, estado, refs
