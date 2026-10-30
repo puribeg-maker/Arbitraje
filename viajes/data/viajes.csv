@@ -30,3 +30,9 @@ timestamp,tipo,moneda,ruta,neto,bruto,ganancia_clp,precio_compra,precio_venta,vo
 2026-10-30T11:07:00Z,extranjero,PEPE/USD,kraken->gate,0.02193,0.0209,,5.263e-06,5.373e-06,277533,fee de retiro desconocido
 2026-10-30T11:07:00Z,extranjero,PEPE/USD,bitstamp->gate,0.02008,0.01761,,5.28e-06,5.373e-06,277533,fee de retiro desconocido
 2026-10-30T11:07:00Z,lectura,,,,,,,,,
+2026-10-30T11:47:41Z,referencia,BTC,cryptomkt->buda,0.00359,0.00359,,76832803.572,77108891.0,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
+2026-10-30T11:47:41Z,referencia,USDT,cryptomkt->buda,0.00089,0.00089,,992.04,992.92,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
+2026-10-30T11:47:41Z,referencia,USDC,cryptomkt->buda,0.00073,0.00073,,993.2219341015809,993.95,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
+2026-10-30T11:47:41Z,extranjero,ALPINE/USDT,gate->bitget,0.01204,0.02803,,0.8171,0.84,481254,fee de retiro desconocido
+2026-10-30T11:47:41Z,extranjero,PEPE/USD,bitstamp->gate,0.01034,0.01813,,5.13e-06,5.223e-06,300496,fee de retiro desconocido
+2026-10-30T11:47:41Z,lectura,,,,,,,,,
