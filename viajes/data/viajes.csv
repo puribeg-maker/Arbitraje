@@ -242,3 +242,6 @@ timestamp,tipo,moneda,ruta,neto,bruto,ganancia_clp,precio_compra,precio_venta,vo
 2026-11-01T10:26:58Z,referencia,USDT,cryptomkt->buda,0.00028,0.00028,,994.65,994.93,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
 2026-11-01T10:26:58Z,referencia,USDC,cryptomkt->buda,0.00017,0.00017,,995.7353515331712,995.9,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
 2026-11-01T10:26:58Z,lectura,,,,,,,,,
+2026-11-01T11:04:36Z,referencia,USDC,buda->cryptomkt,0.00024,0.00024,,996.03,996.2659298635513,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
+2026-11-01T11:04:36Z,referencia,SOL,cryptomkt->buda,0.00114,0.00114,,94890.413,94999.0,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
+2026-11-01T11:04:36Z,lectura,,,,,,,,,
