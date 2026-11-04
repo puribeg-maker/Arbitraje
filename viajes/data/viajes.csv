@@ -516,3 +516,4 @@ timestamp,tipo,moneda,ruta,neto,bruto,ganancia_clp,precio_compra,precio_venta,vo
 2026-11-03T22:52:36Z,lectura,,,,,,,,,
 2026-11-03T23:28:56Z,extranjero,AERO/USD,bitstamp->kraken,0.01922,0.02479,,0.63525,0.651,47505,fee de retiro desconocido
 2026-11-03T23:28:56Z,lectura,,,,,,,,,
+2026-11-04T00:06:15Z,lectura,,,,,,,,,
