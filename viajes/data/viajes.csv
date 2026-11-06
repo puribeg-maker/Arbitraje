@@ -689,3 +689,5 @@ timestamp,tipo,moneda,ruta,neto,bruto,ganancia_clp,precio_compra,precio_venta,vo
 2026-11-06T00:04:35Z,referencia,USDT,cryptomkt->buda,0.001,0.001,,978.04,979.02,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
 2026-11-06T00:04:35Z,extranjero,AERO/USD,bitstamp->kraken,0.02267,0.02444,,0.60277,0.6175,141260,fee de retiro desconocido
 2026-11-06T00:04:35Z,lectura,,,,,,,,,
+2026-11-06T01:13:22Z,referencia,SOL,cryptomkt->buda,0.00174,0.00174,,88401.5323,88555.0,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
+2026-11-06T01:13:22Z,lectura,,,,,,,,,
