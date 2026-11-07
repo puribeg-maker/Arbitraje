@@ -771,3 +771,6 @@ timestamp,tipo,moneda,ruta,neto,bruto,ganancia_clp,precio_compra,precio_venta,vo
 2026-11-07T02:18:15Z,referencia,BCH,cryptomkt->buda,0.00136,0.00136,,257754.016,258105.0,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
 2026-11-07T02:18:15Z,extranjero,AERO/USD,kraken->bitstamp,0.01447,0.01854,,0.6096,0.6209,62999,fee de retiro desconocido
 2026-11-07T02:18:15Z,lectura,,,,,,,,,
+2026-11-07T03:15:28Z,referencia,BCH,cryptomkt->buda,0.00486,0.00486,,256290.661,257535.0,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
+2026-11-07T03:15:28Z,extranjero,AERO/USD,kraken->bitstamp,0.01665,0.02071,,0.6083,0.6209,65302,fee de retiro desconocido
+2026-11-07T03:15:28Z,lectura,,,,,,,,,
