@@ -1111,3 +1111,5 @@ timestamp,tipo,moneda,ruta,neto,bruto,ganancia_clp,precio_compra,precio_venta,vo
 2026-11-10T18:58:26Z,extranjero,NESS/USDT,gate->bitget,0.02131,0.03649,,0.001699,0.001761,15255,fee de retiro desconocido
 2026-11-10T18:58:26Z,lectura,,,,,,,,,
 2026-11-10T19:45:48Z,lectura,,,,,,,,,
+2026-11-10T20:34:05Z,referencia,USDT,cryptomkt->buda,0.0006,0.0006,,983.11,983.7,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
+2026-11-10T20:34:05Z,lectura,,,,,,,,,
