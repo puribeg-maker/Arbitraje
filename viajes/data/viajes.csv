@@ -1367,3 +1367,5 @@ timestamp,tipo,moneda,ruta,neto,bruto,ganancia_clp,precio_compra,precio_venta,vo
 2026-11-13T09:46:38Z,buda-ext,BCH,buda->bitget->buda (vuelta),0.01412,0.0398,7061,220.2,228506.0,516504,2 traslados (~35 min)
 2026-11-13T09:46:38Z,referencia,BCH,cryptomkt->buda,0.04355,0.04355,,218970.4647,228506.0,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
 2026-11-13T09:46:38Z,lectura,,,,,,,,,
+2026-11-13T10:48:13Z,referencia,BCH,cryptomkt->buda,0.03567,0.03567,,220636.15,228506.0,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
+2026-11-13T10:48:13Z,lectura,,,,,,,,,
