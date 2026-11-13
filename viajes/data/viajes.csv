@@ -1322,3 +1322,13 @@ timestamp,tipo,moneda,ruta,neto,bruto,ganancia_clp,precio_compra,precio_venta,vo
 2026-11-13T03:16:21Z,referencia,BCH,cryptomkt->buda,0.08246,0.08246,,218021.7222,236000.0,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
 2026-11-13T03:16:21Z,referencia,LTC,cryptomkt->buda,0.00971,0.00971,,48528.7292,49000.0,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
 2026-11-13T03:16:21Z,lectura,,,,,,,,,
+2026-11-13T04:24:17Z,buda-ext,BCH,buda->kraken->buda (vuelta),0.02476,0.05098,12381,218.08,228506.0,84539,2 traslados (~35 min)
+2026-11-13T04:24:17Z,buda-ext,BCH,buda->gate->buda (vuelta),0.03358,0.06022,16790,216.18,228506.0,401514,2 traslados (~35 min)
+2026-11-13T04:24:17Z,buda-ext,BCH,buda->okx->buda (vuelta),0.0329,0.06007,16449,216.21,228506.0,3592265,BCH sin datos de red en okx; USDT sin datos de red en okx; 2 traslados (~35 min)
+2026-11-13T04:24:17Z,buda-ext,BCH,buda->mexc->buda (vuelta),0.03334,0.05963,16669,216.3,228506.0,1333846,BCH sin datos de red en mexc; USDT sin datos de red en mexc; 2 traslados (~35 min)
+2026-11-13T04:24:17Z,buda-ext,BCH,buda->bitget->buda (vuelta),0.03318,0.05865,16588,216.5,228506.0,495046,2 traslados (~35 min)
+2026-11-13T04:24:17Z,referencia,BTC,cryptomkt->buda,0.00295,0.00295,,68409161.28,68611122.0,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
+2026-11-13T04:24:17Z,referencia,ETH,cryptomkt->buda,0.00156,0.00156,,1917051.84,1920050.0,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
+2026-11-13T04:24:17Z,referencia,BCH,cryptomkt->buda,0.06555,0.06555,,214448.688,228506.0,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
+2026-11-13T04:24:17Z,referencia,LTC,cryptomkt->buda,0.01692,0.01692,,47692.8,48500.0,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
+2026-11-13T04:24:17Z,lectura,,,,,,,,,
