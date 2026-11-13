@@ -15,7 +15,7 @@ RETIRO_CLP = {                 # costo de sacar los pesos al banco — VERIFICAR
     "cryptomkt": 3_000,
 }
 # CryptoMKT entrega solo un precio de referencia: se avisa para revisar a mano
-UMBRAL_REF_CRYPTOMKT = 0.03    # diferencia mínima vs el libro de Buda para avisar
+UMBRAL_REF_CRYPTOMKT = 0.05    # diferencia bruta mínima vs Buda; el circuito real cuesta ~2,5–3,5%
 # Red preferida para traer USDT de vuelta a Buda — VERIFICAR que Buda la acepte
 RED_USDT_PREFERIDA = "TRC20"
 # Costo de retiro de cripto (en unidades de la moneda) cuando la API no lo entrega.
