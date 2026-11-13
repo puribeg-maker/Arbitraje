@@ -449,7 +449,11 @@ def main():
         cuerpo += ("\n\nAntes de operar: confirma en ambas plataformas que la red de retiro y la de "
                    "depósito coincidan, que no haya retiros suspendidos y que el precio siga ahí.")
         f0 = alertas[0][0]
-        enviar_mail(f"🚚 Viaje: {f0['moneda']} {f0['ruta']} neto {float(f0['neto']):.1%}", cuerpo)
+        if f0["tipo"] == "referencia":
+            asunto = f"👀 Revisar a mano: {f0['moneda']} {f0['ruta']} bruto {float(f0['neto']):.1%} (sin costos)"
+        else:
+            asunto = f"🚚 Viaje: {f0['moneda']} {f0['ruta']} neto {float(f0['neto']):.1%}"
+        enviar_mail(asunto, cuerpo)
 
     # Para no inflar el CSV: todas las rutas chilenas con bruto > 0, y en el extranjero solo
     # las que superan la mitad del umbral. Una fila "lectura" marca cada corrida.
