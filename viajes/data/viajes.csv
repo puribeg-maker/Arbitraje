@@ -1424,3 +1424,5 @@ timestamp,tipo,moneda,ruta,neto,bruto,ganancia_clp,precio_compra,precio_venta,vo
 2026-11-13T23:07:13Z,lectura,,,,,,,,,
 2026-11-13T23:46:01Z,referencia,BCH,cryptomkt->buda,0.00095,0.00095,,219500.6838,219709.0,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
 2026-11-13T23:46:01Z,lectura,,,,,,,,,
+2026-11-14T00:34:44Z,referencia,USDC,buda->cryptomkt,0.00203,0.00203,,997.62,999.6496882225181,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
+2026-11-14T00:34:44Z,lectura,,,,,,,,,
