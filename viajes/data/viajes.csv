@@ -1571,3 +1571,4 @@ timestamp,tipo,moneda,ruta,neto,bruto,ganancia_clp,precio_compra,precio_venta,vo
 2026-11-15T02:58:12Z,extranjero,CC/USDT,mexc->kraken,0.03373,0.03793,,0.07698,0.0799,78264,estado de redes desconocido
 2026-11-15T02:58:12Z,extranjero,XMR/USDT,mexc->kraken,0.01559,0.01924,,475.55,484.7,481198,estado de redes desconocido
 2026-11-15T02:58:12Z,lectura,,,,,,,,,
+2026-11-15T03:45:10Z,lectura,,,,,,,,,
