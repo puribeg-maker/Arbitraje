@@ -1,23 +1,28 @@
-# Escáner de arbitraje (USDT/CLP y PAXG)
+# Arbitraje y side income
 
-Registra cada 15 min el spread neto de:
-1. **USDT/CLP en Buda** vs dólar de mercado (Yahoo `CLP=X`, respaldo: dólar observado).
-2. **PAXG** vs oro (futuro COMEX `GC=F`) y entre Kraken y Coinbase.
+Repositorio personal con bots que corren en GitHub Actions. No ejecutan operaciones: miden, registran y avisan por mail.
 
-No ejecuta operaciones. Guarda todo en `data/spreads.csv` y alerta por mail (Gmail)
-cuando el spread neto supera el umbral durante 2 lecturas seguidas.
+## Estructura
 
-## Puesta en marcha
-1. Sube estos archivos a un repo nuevo.
-2. Gmail: activa la verificación en 2 pasos en tu cuenta de Google y crea una
-   contraseña de aplicación (Cuenta de Google → Seguridad → Contraseñas de
-   aplicaciones). Son 16 caracteres; no uses tu clave normal.
-3. En el repo: Settings → Secrets and variables → Actions → agrega
-   `GMAIL_USER` (tu correo) y `GMAIL_APP_PASSWORD`. Opcional: `MAIL_TO` si
-   quieres recibir las alertas en otra dirección.
-4. Pestaña Actions → "Escáner de arbitraje" → Run workflow para probar.
-   La tabla de resultados aparece en el resumen de cada ejecución.
+| Carpeta | Qué hace | Workflow | Estado |
+|---|---|---|---|
+| `viajes/` | Escáner de arbitraje "con viaje" (comprar en A, transferir, vender en B): Buda vs CryptoMKT (referencia) y Buda vs exchanges extranjeros vía USDT. Historial en `viajes/data/viajes.csv`. | `viajes.yml` (cada 15 min) | Activo |
+| `nichos/` | Análisis de exports de eRank para elegir productos de Etsy. Se sube un CSV a `nichos/erank/` y llega el ranking por mail. | `erank.yml` (al subir archivos) | Activo |
+| `nichos/nichos.py` | Investigación vía API de Etsy | `nichos.yml` | Pausado (API no aprobada) |
+| `backtest/` | Backtests de trading (momentum cripto y tendencia BTC). Ninguna estrategia pasó los criterios. | `backtest.yml`, `backtest_btc.yml` (manuales) | Archivo |
+| — | Recordatorio con el CSV de viajes adjunto | `recordatorio.yml` (27-nov-2026) | Programado |
 
-## Ajustes
-Umbral, comisiones y exchanges están en `config.py`. Las comisiones son
-aproximadas: ajústalas a tu cuenta real antes de interpretar el spread neto.
+## Configuración
+
+Secrets del repo (Settings → Secrets and variables → Actions):
+- `GMAIL_USER`, `GMAIL_APP_PASSWORD` (contraseña de aplicación de Google), `MAIL_TO` (opcional)
+- `ETSY_KEYSTRING`, `ETSY_SHARED_SECRET` (solo para `nichos.yml`)
+
+Los parámetros del escáner (umbrales, comisiones, tiempos de traslado) están en `viajes/config_viajes.py`.
+Costos medidos en prueba real (nov 2026): margen de compra en CryptoMKT ~2,3% sobre su precio de referencia;
+Buda 0,5% al vender; retiros a banco $0 en ambas; traslado de BCH ~30 min normal (85 min con red lenta).
+
+## Cómo leer las alertas
+
+- **🚚 Viaje … neto X%**: precios ejecutables y costos incluidos.
+- **👀 Revisar a mano … neto estimado X%**: usa el precio de referencia de CryptoMKT; confirma el precio real en la app antes de mover plata.
