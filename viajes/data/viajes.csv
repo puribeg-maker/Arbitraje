@@ -1742,3 +1742,4 @@ timestamp,tipo,moneda,ruta,neto,bruto,ganancia_clp,precio_compra,precio_venta,vo
 2026-11-17T16:44:44Z,lectura,,,,,,,,,
 2026-11-17T17:44:27Z,referencia,USDT,cryptomkt->buda,0.00069,0.00069,,993.37,994.06,,"precio de referencia CryptoMKT, sin costos: revisar a mano"
 2026-11-17T17:44:27Z,lectura,,,,,,,,,
+2026-11-17T18:34:43Z,lectura,,,,,,,,,
